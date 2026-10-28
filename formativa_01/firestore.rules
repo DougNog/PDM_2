@@ -1,0 +1,41 @@
+rules_version = '2';
+
+// Regras de segurança do Cloud Firestore — Mapa de Locais.
+//
+// Publique no Firebase Console: Firestore Database > Regras > colar > Publicar.
+//
+// - Só a coleção `locais` pode ser usada; qualquer outra fica bloqueada.
+// - Leitura liberada: o app lista os locais para qualquer usuário.
+// - Criação e edição só aceitam documentos com exatamente os campos do model
+//   `Local`, nos tipos e limites certos. Assim ninguém grava lixo ou campos
+//   extras no banco.
+// - O app ainda não tem login, então não há como saber QUEM está gravando.
+//   Restringir escrita a administradores exige Firebase Authentication
+//   (desafio extra nível 3).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function localValido(local) {
+      return local.keys().hasOnly(['nome', 'categoria', 'cidade', 'avaliacao',
+                                   'distancia', 'horario', 'descricao', 'favorito'])
+        && local.keys().hasAll(['nome', 'categoria', 'cidade', 'avaliacao',
+                                'distancia', 'horario', 'descricao', 'favorito'])
+        && local.nome is string && local.nome.size() > 0 && local.nome.size() <= 100
+        && local.categoria is string && local.categoria.size() > 0 && local.categoria.size() <= 50
+        && local.cidade is string && local.cidade.size() > 0 && local.cidade.size() <= 50
+        && local.avaliacao is number && local.avaliacao >= 0 && local.avaliacao <= 5
+        && local.distancia is number && local.distancia >= 0 && local.distancia <= 1000
+        && local.horario is string && local.horario.size() <= 30
+        && local.descricao is string && local.descricao.size() <= 1000
+        && local.favorito is bool;
+    }
+
+    match /locais/{localId} {
+      allow read: if true;
+      // Em um update, request.resource.data é o documento já com a alteração
+      // aplicada; por isso a mesma validação serve para editar e favoritar.
+      allow create, update: if localValido(request.resource.data);
+      allow delete: if true;
+    }
+  }
+}
