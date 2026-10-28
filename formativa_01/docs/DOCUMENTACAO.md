@@ -203,22 +203,23 @@ do Firestore, sem login (como faria qualquer pessoa de fora do app):
 
 ### 10.1 Testes manuais (roteiro da avaliação)
 
-Preencha a coluna **Resultado** (Passou/Falhou) durante a demonstração. Deixe o
-Firebase Console aberto na coleção `locais` para conferir as gravações.
+Executados em 28/10/2026 no emulador Android (Medium Phone, API 37), com o app
+ligado ao Firestore real. As gravações foram conferidas consultando o banco pela
+API do Firestore.
 
 | ID | Teste | Procedimento | Resultado |
 |---|---|---|---|
-| T01 | Conexão | Abrir o app e verificar que os marcadores e a lista mostram os documentos do Firestore. | |
-| T02 | Pesquisa | Pesquisar "Academia". | |
-| T03 | Cidade | Selecionar Campinas no topo do mapa. | |
-| T04 | Filtro | Em Resultados, tocar no chip "Restaurantes". | |
-| T05 | Create | Tocar em **Novo local**, preencher e salvar; conferir o novo documento no Console. | |
-| T06 | Read | Fechar e reabrir a tela de resultados (ou o app) e verificar que o registro continua lá. | |
-| T07 | Update | Menu ⋮ > Editar; alterar nome ou horário e salvar; conferir no Console. | |
-| T08 | Delete | Menu ⋮ > Excluir > confirmar; o item some da lista e do Console. | |
-| T09 | Favorito | Nos detalhes, tocar no coração para marcar e desmarcar; o campo `favorito` muda no Console. | |
-| T10 | Navegação | Abrir resultados, detalhes e voltar; testar "Ver no mapa". | |
-| T11 | Erro | (a) Pesquisar "xyz" → "Nenhum local encontrado". (b) Publicar temporariamente uma regra com `allow read: if false` → "Erro ao carregar os locais" com `permission-denied`. Depois, publicar de novo o `firestore.rules`. | |
+| T01 | Conexão | Abrir o app e verificar que os marcadores e a lista mostram os documentos do Firestore. | Passou — "5 locais em São Paulo" no mapa |
+| T02 | Pesquisa | Pesquisar "Academia". | Passou — Academia Fitness, Body Center e Smart Fit |
+| T03 | Cidade | Selecionar Campinas no topo do mapa. | Passou — "6 locais em Campinas" |
+| T04 | Filtro | Em Resultados, tocar no chip "Restaurantes". | Passou — só Restaurante Sabor Caseiro |
+| T05 | Create | Tocar em **Novo local**, preencher e salvar; conferir o novo documento no Firestore. | Passou — "Padaria Teste T05" gravado (22 documentos) |
+| T06 | Read | Fechar e reabrir a tela de resultados e verificar que o registro continua lá. | Passou |
+| T07 | Update | Menu ⋮ > Editar; alterar nome ou horário e salvar; conferir no Firestore. | Passou — horário 07:00 - 19:00 → 08:00 - 18:00 no banco |
+| T08 | Delete | Menu ⋮ > Excluir > confirmar; o item some da lista e do Firestore. | Passou — confirmação exibida; volta a 21 documentos |
+| T09 | Favorito | Nos detalhes, tocar no coração para marcar e desmarcar; o campo `favorito` muda no Firestore. | Passou — Farmácia Vida marcada e desmarcada |
+| T10 | Navegação | Abrir resultados, detalhes e voltar; testar "Ver no mapa". | Passou |
+| T11 | Erro | (a) Pesquisar "xyz" → "Nenhum local encontrado". (b) Publicar temporariamente uma regra com `allow read: if false` → "Erro ao carregar os locais" com `permission-denied`. Depois, publicar de novo o `firestore.rules`. | Passou — (a) e (b); regras restauradas em seguida |
 
 ### 10.2 Testes automatizados (`flutter test`)
 
@@ -279,8 +280,22 @@ Firebase Console com a coleção `locais` (21 documentos) e os campos de um dele
 
 ## 14. Conclusão
 
-> Escreva aqui, com suas palavras, o que aprendeu: configuração do Firebase com
-> FlutterFire, organização em camadas (model, serviço, telas), CRUD no Cloud
-> Firestore, atualização em tempo real com `snapshots()` e `StreamBuilder`,
-> regras de segurança, formulários com validação, navegação entre telas, e o
-> que faria numa próxima versão (autenticação, mapa real, imagens).
+O desenvolvimento começou com os dados em memória, porque a conta institucional
+bloqueou a criação do projeto no Firebase. Como desde o início as telas só
+conversavam com o `LocalService`, a troca para o Cloud Firestore mudou apenas
+essa classe: nenhuma tela precisou ser alterada. Isso mostrou na prática o valor
+de separar o projeto em camadas (model, serviço e telas).
+
+Com o Firestore, aprendi a configurar o Firebase pelo FlutterFire CLI, a fazer o
+CRUD com `add()`, `update()`, `delete()` e `snapshots()`, e a usar o
+`StreamBuilder` para que a lista se atualize sozinha quando o banco muda. Também
+vi que o banco não pode ficar aberto: as regras de segurança validam cada
+documento gravado, e testei que gravações inválidas são recusadas. Os testes
+automatizados com um Firestore falso permitiram conferir o app sem depender da
+internet.
+
+As maiores dificuldades foram a criação do projeto no Firebase e o emulador
+Android, que travou na inicialização e precisou de uma partida a frio. Numa
+próxima versão, eu adicionaria login com Firebase Authentication para restringir
+quem cadastra e exclui, favoritos por usuário, consultas com `where()` no
+próprio Firestore e um mapa real com coordenadas.
